@@ -1,3 +1,7 @@
+"""Bayesian Rule List (Dirichlet-Multinomial likelihood, Poisson length prior, and MCMC search).
+
+Author: Mohammad Asad ur Rahman Nisar (24AI10038)
+"""
 import math
 import random
 

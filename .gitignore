@@ -1,7 +1,14 @@
-.venv/
 venv/
-__pycache__/
+venv/
+_pycache_/
 *.py[cod]
+.pytest_cache/
 .vscode/
 
+# Internal working files (not part of the submission)
+.dev/
+
+# Results and figures in results/ are intentionally tracked (part of the submission)
+
 .DS_Store
+
