@@ -92,30 +92,71 @@ class BayesianRuleList:
         for _ in range(self.n_iter):
             move = rng.randrange(4)
             prop = list(cur)
+            q_forward = 0.0
+            q_backward = 0.0
+
+            # We approximate proposal probabilities by counting how many
+            # valid moves of each type exist in the current and proposed
+            # states, so add/remove and replace moves are treated as
+            # non-symmetric in the MH ratio.
+            cur_set = set(cur)
+
             if move == 0 and len(prop) < self.max_len:          # add
-                c = other(set(cur))
+                c = other(cur_set)
                 if c is None:
                     continue
-                prop.insert(rng.randint(0, len(prop)), c)
+                # number of possible forward add moves: candidates not in cur
+                n_fwd = max(len(set(range(n_c)) - cur_set), 1)
+                # number of positions to insert
+                pos = rng.randint(0, len(prop))
+                prop.insert(pos, c)
+                q_forward = 1.0 / n_fwd
+                # backward (remove) moves from prop: any position can be removed
+                q_backward = 1.0 / len(prop)
             elif move == 1 and len(prop) > 1:                   # remove
-                prop.pop(rng.randrange(len(prop)))
+                # forward: choose a position to remove
+                idx = rng.randrange(len(prop))
+                removed = prop.pop(idx)
+                q_forward = 1.0 / len(cur)
+                # backward (add) from prop: can add any candidate not in prop
+                prop_set = set(prop)
+                n_bwd = max(len(set(range(n_c)) - prop_set), 1)
+                q_backward = 1.0 / n_bwd
             elif move == 2 and len(prop) > 1:                   # swap order
                 i, j = rng.sample(range(len(prop)), 2)
                 prop[i], prop[j] = prop[j], prop[i]
+                # swapping two positions is symmetric
+                q_forward = 1.0
+                q_backward = 1.0
             elif move == 3:                                     # replace
-                c = other(set(cur))
+                # forward: replace one element of cur with a different candidate
+                idx = rng.randrange(len(prop))
+                c = other(cur_set)
                 if c is None:
                     continue
-                prop[rng.randrange(len(prop))] = c
+                old = prop[idx]
+                prop[idx] = c
+                # forward: choose position *and* new candidate
+                n_fwd_pos = len(cur)
+                n_fwd_cand = max(len(set(range(n_c)) - cur_set), 1)
+                q_forward = 1.0 / (n_fwd_pos * n_fwd_cand)
+                # backward: from prop, we can replace the same position back to old
+                prop_set = set(prop)
+                n_bwd_pos = len(prop)
+                n_bwd_cand = max(len(set(range(n_c)) - prop_set) + 1, 1)
+                q_backward = 1.0 / (n_bwd_pos * n_bwd_cand)
             else:
                 continue
 
             ps, pp, pn = self._log_posterior(prop, cm, y)
-            # symmetric proposals -> MH ratio reduces to exp(posterior diff)
-            if math.log(rng.random() + 1e-12) < (ps - cur_s):
-                cur, cur_s, cur_p, cur_n = prop, ps, pp, pn
-                if cur_s > best[1]:
-                    best = (list(cur), cur_s, cur_p, cur_n)
+            # Metropolis-Hastings with non-symmetric proposals:
+            # accept with probability min(1, exp(ps - cur_s) * (q_backward / q_forward)).
+            if q_forward > 0 and q_backward > 0:
+                log_alpha = (ps - cur_s) + math.log(q_backward) - math.log(q_forward)
+                if math.log(rng.random() + 1e-12) < log_alpha:
+                    cur, cur_s, cur_p, cur_n = prop, ps, pp, pn
+                    if cur_s > best[1]:
+                        best = (list(cur), cur_s, cur_p, cur_n)
         return best
 
     def fit(self, X_df, y, enc):

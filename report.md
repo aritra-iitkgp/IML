@@ -327,7 +327,7 @@ The Bayesian Rule List diagram shows the ordered first-match semantics and the p
 
 ### ROC comparison
 
-The ROC plot compares both rule models with the interpretable Naive Bayes baseline. It makes the single-split AUC difference visible: BRL 0.8633, Sequential Covering 0.7354, and Naive Bayes 0.9128.
+The ROC plot compares both rule models with the interpretable Naive Bayes baseline. In this figure, Naive Bayes is trained on the same discretised features as the rule models; the Stage 1 baseline instead uses the raw columns. The single-split AUC difference in the plot is: BRL 0.8633, Sequential Covering 0.7354, and Naive Bayes 0.9128.
 
 <img src="results/figures/roc_curves.png" alt="ROC curves" width="380">
 
@@ -345,7 +345,7 @@ The reliability diagram compares each model's predicted probability with the obs
 
 ## Conclusion
 
-We implemented both assigned topics, **Sequential Covering** (separate-and-conquer, RIPPER-style) and **Bayesian Rule Lists** (Dirichlet-Multinomial likelihood, truncated-Poisson length prior, Metropolis-Hastings search), from scratch in PyTorch on the UCI Adult dataset. The core rule-learning logic is written by us, and the supporting libraries are listed at the start of this report.
+We implemented both assigned topics, **Sequential Covering** (separate-and-conquer, RIPPER-inspired rather than a faithful reproduction of all RIPPER heuristics) and **Bayesian Rule Lists** (Dirichlet-Multinomial likelihood, truncated-Poisson length prior, Metropolis-Hastings search with non-symmetric proposals), from scratch in PyTorch on the UCI Adult dataset. The core rule-learning logic is written by us, and the supporting libraries are listed at the start of this report.
 
 **Mean over 3 seeds, 60/20/20 split:**
 

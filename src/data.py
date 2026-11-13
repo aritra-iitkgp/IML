@@ -1,7 +1,4 @@
-"""Data loading, cleaning, discretization, and PyTorch boolean literal encoding.
 
-Author: Aritra Bose (25EC65R08)
-"""
 import numpy as np
 import pandas as pd
 import torch
@@ -31,9 +28,10 @@ def load_adult(file_path="data/adult.data", verbose=True):
                      na_values=['?', ' ?'])
 
     # Strip whitespace from the text columns (some values are padded).
+    # IMPORTANT: preserve NaN values so dropna() can remove incomplete rows.
     for col in df.columns:
         if df[col].dtype == object:
-            df[col] = df[col].astype(str).str.strip()
+            df[col] = df[col].str.strip()
 
     n_before = len(df)
     df = df.dropna().reset_index(drop=True)

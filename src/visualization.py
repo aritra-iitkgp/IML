@@ -1,7 +1,4 @@
-"""Visualization utilities: decision lists, ROC curves, confusion matrices, and calibration plots.
 
-Author: Kotikala Yashwant (24AI10034)
-"""
 import os
 
 import matplotlib

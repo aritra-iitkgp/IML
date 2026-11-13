@@ -1,7 +1,4 @@
-"""Sequential Covering (separate-and-conquer rule induction with FOIL gain and Cohen pruning).
 
-Author: Chunarkar Sujeeth Kumar (24AI10021)
-"""
 import math
 
 import numpy as np

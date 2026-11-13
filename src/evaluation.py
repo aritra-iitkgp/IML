@@ -1,7 +1,4 @@
-"""Model evaluation pipeline: 60/20/20 splits, validation threshold tuning, and multi-seed benchmarking.
 
-Author: Kotikala Yashwant (24AI10034)
-"""
 import numpy as np
 import pandas as pd
 
