@@ -18,7 +18,7 @@ For this assignment we implemented two intrinsically interpretable rule learners
 
 ---
 
-## Stage 1: Data and a first baseline (Aritra Bose)
+## Stage 1: Data and a first baseline 
 
 ### 1.1 Loading and inspecting the data
 
@@ -70,7 +70,7 @@ At 75/25, a majority-class predictor scores 0.7510 accuracy while having zero mi
 
 ---
 
-## Stage 2: Discretisation and literal encoding (Aritra Bose)
+## Stage 2: Discretisation and literal encoding 
 
 ### 2.1 Why we had to discretise at all
 
@@ -112,8 +112,7 @@ We represent the whole dataset as a single boolean PyTorch tensor `M`. Each row 
 
 ---
 
-## Stage 3: Sequential Covering (Chunarkar Sujeeth Kumar)
-
+## Stage 3: Sequential Covering 
 ### 3.1 The algorithm
 
 The algorithm works in a loop. Our implementation follows the RIPPER rule-induction formulation:
@@ -134,11 +133,11 @@ SEQUENTIAL-COVERING(X, y):
     return rules and default rule
 ```
 
-The loop is the standard separate-and-conquer idea: grow a rule, prune it, remove the positives it covers, and repeat, with a default rule for the rest. We grow with **FOIL gain** and prune with **Cohen's metric** `(p − n) / (p + n)`.
+The loop is the standard separate-and-conquer idea: grow a rule, prune it, remove the examples it covers, and repeat, with a default rule for the rest. We grow with **FOIL gain** and prune with **Cohen's metric** `(p − n) / (p + n)`.
 
 1. **Grow** one rule that covers positive (`>50K`) examples, using a gain criterion.
 2. **Prune** that rule so it does not overfit.
-3. **Remove (separate)** the positive examples the rule covers.
+3. **Remove (separate)** the examples the accepted rule covers.
 4. **Conquer**: repeat on the remaining examples.
 5. When no more useful rules can be learned, a **default rule** handles the rest.
 
@@ -155,7 +154,7 @@ where `C = M & covered` is the coverage of the literals that are still consisten
 
 ### 3.3 Challenges in Stage 3
 
-**The first rules were only about one feature.** Our first grown rules were all of the form `[marital-status = Married-civ-spouse] AND ...`. Because `marital-status = Married-civ-spouse` has the highest FOIL gain on this dataset, greedy growth kept locking onto it. With a single condition the best rule covered a large share of positives and the later rules became near-duplicates. We handled this by removing covered positives after every rule, so later rules must explain new positives, and by allowing up to 2 conditions so a second, more specific literal can refine the rule.
+**The first rules were only about one feature.** Our first grown rules were all of the form `[marital-status = Married-civ-spouse] AND ...`. Because `marital-status = Married-civ-spouse` has the highest FOIL gain on this dataset, greedy growth kept locking onto it. With a single condition the best rule covered a large share of positives and the later rules became near-duplicates. We handled this by removing every example covered by an accepted rule, so later rules must explain positives not captured by earlier rules, and by allowing up to 2 conditions so a second, more specific literal can refine the rule.
 
 **Rules grew too specific and covered nobody.** Without pruning, growth can append conditions until the rule matches only a few people. We prune trailing conditions on a held-out third of the alive data using Cohen's metric, and reject any rule that does not cover more positives than negatives.
 
@@ -179,7 +178,7 @@ The list is short and readable: four rules and a default, read top to bottom. Ru
 
 ---
 
-## Stage 4: Bayesian Rule List (Mohammad Asad ur Rahman Nisar)
+## Stage 4: Bayesian Rule List 
 
 ### 4.1 The math we implemented
 
@@ -237,23 +236,23 @@ Stage 4 produced an ordered list of eight rules plus a default leaf, each carryi
 
 | # | Rule | P(`>50K`) | n0 / n1 |
 |---|---|---:|---|
-| 1 | `capital_gain_group = High (>7k)` AND `capital_loss_group = None` | 0.988 | 12 / 1050 |
-| 2 | `marital-status = Married-civ-spouse` AND `occupation = Prof-specialty` | 0.660 | 491 / 953 |
-| 3 | `occupation = Exec-managerial` AND `relationship = Husband` | 0.638 | 538 / 948 |
-| 4 | `age_group = Young (<=25)` AND `capital_loss_group = None` | 0.012 | 4241 / 51 |
-| 5 | `marital-status = Married-civ-spouse` | 0.333 | 4722 / 2359 |
-| 6 | `occupation = Prof-specialty` AND `relationship = Not-in-family` | 0.192 | 680 / 161 |
-| 7 | `hours_group = Part-time (<35)` | 0.012 | 1141 / 13 |
-| 8 | `hours_group = Full-time (35-40)` | 0.037 | 4595 / 176 |
-| – | DEFAULT: else | 0.148 | 1703 / 295 |
+| 1 | `capital_loss_group = High-Loss (>1.8k)` | 0.711 | 224 / 552 |
+| 2 | `capital_gain_group = High (>7k)` | 0.988 | 12 / 1050 |
+| 3 | `occupation = Exec-managerial` AND `relationship = Husband` | 0.603 | 532 / 807 |
+| 4 | `marital-status = Married-civ-spouse` AND `occupation = Prof-specialty` | 0.628 | 481 / 812 |
+| 5 | `marital-status = Married-civ-spouse` | 0.301 | 5045 / 2177 |
+| 6 | `age_group = Young (<=25)` | 0.003 | 3918 / 12 |
+| 7 | `race = White` AND `hours_group = Extreme (>55)` | 0.180 | 424 / 92 |
+| 8 | `hours_group = Overtime (41-55)` | 0.149 | 1403 / 244 |
+| – | DEFAULT: else | 0.041 | 6084 / 260 |
 
-Test metrics: accuracy 0.8318, precision 0.7503, recall 0.4860, F1 0.5899, AUC 0.8633.
+Test metrics: accuracy 0.8367, precision 0.7405, recall 0.5300, F1 0.6178, AUC 0.8648.
 
-Unlike Sequential Covering, every leaf carries a **probability** rather than a hard label, and those probabilities are the posterior means from the Dirichlet model. The AUC of **0.8633** is much closer to the Naive Bayes reference (0.9128) than Sequential Covering's 0.7354, as the ordered leaves assign a finer range of posterior probabilities across the dataset (eight distinct values here) than Sequential Covering's few rule confidences plus a default. Precision is also higher (0.7503 vs 0.6967), at the cost of lower recall, and the learned list is longer (8 rules vs 4 rules).
+Unlike Sequential Covering, every leaf carries a **probability** rather than a hard label, and those probabilities are the posterior means from the Dirichlet model. The AUC of **0.8648** is much closer to the Naive Bayes reference (0.9128) than Sequential Covering's 0.7354, as the ordered leaves assign a finer range of posterior probabilities across the dataset (eight distinct values here) than Sequential Covering's few rule confidences plus a default. Precision is also higher (0.7405 vs 0.6967), at the cost of slightly lower recall, and the learned list is longer (8 rules vs 4 rules).
 
 ---
 
-## Stage 5: Evaluation and audit (Kotikala Yashwant)
+## Stage 5: Evaluation and audit 
 
 ### 5.1 The protocol
 
@@ -276,26 +275,26 @@ Per-run test results over seeds 42/43/44 (`tau` is the validation-selected thres
 | Model | seed | rules | literals | tau | acc | F1 (0.5) | AUC | F1 (tuned) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | SeqCovering | 42 | 4 | 8 | 0.575 | 0.8263 | 0.6054 | 0.7336 | 0.5373 |
-| BRL | 42 | 8 | 14 | 0.311 | 0.8283 | 0.5744 | 0.8618 | 0.6235 |
+| BRL | 42 | 8 | 13 | 0.267 | 0.8100 | 0.6478 | 0.8568 | 0.6455 |
 | SeqCovering | 43 | 3 | 6 | 0.634 | 0.8256 | 0.5765 | 0.7144 | 0.5765 |
-| BRL | 43 | 8 | 13 | 0.422 | 0.8266 | 0.5572 | 0.8575 | 0.6337 |
+| BRL | 43 | 8 | 14 | 0.307 | 0.8349 | 0.6160 | 0.8616 | 0.6127 |
 | SeqCovering | 44 | 4 | 8 | 0.141 | 0.8218 | 0.6041 | 0.7359 | 0.6041 |
-| BRL | 44 | 8 | 15 | 0.286 | 0.8279 | 0.6358 | 0.8541 | 0.6358 |
+| BRL | 44 | 8 | 15 | 0.290 | 0.8281 | 0.6358 | 0.8553 | 0.6358 |
 
 Mean ± std over the three seeds:
 
 | Model | accuracy | precision | recall | F1 (0.5) | F1 (tuned) | AUC |
 |---|---:|---:|---:|---:|---:|---:|
 | SeqCovering (3.7 rules, 7.3 literals) | 0.8246 ± 0.0024 | 0.7006 ± 0.0268 | 0.5193 ± 0.0373 | 0.5953 ± 0.0163 | 0.5726 ± 0.0335 | 0.7279 ± 0.0118 |
-| BRL (8.0 rules, 14.0 literals) | 0.8276 ± 0.0009 | 0.7291 ± 0.0499 | 0.5022 ± 0.0885 | 0.5891 ± 0.0413 | 0.6310 ± 0.0066 | 0.8578 ± 0.0038 |
+| BRL (8.0 rules, 14.0 literals) | 0.8244 ± 0.0129 | 0.6687 ± 0.0651 | 0.6121 ± 0.0853 | 0.6332 ± 0.0160 | 0.6313 ± 0.0168 | 0.8579 ± 0.0033 |
 
 ### 5.4 Results discussion
 
 - **Both models clear the accuracy baseline (0.7511)** while staying readable. Their accuracies are slightly lower than the single-split Stage 3/4 numbers, likely because the 60% training subset is smaller than the 80% split used earlier, but the ranking picture is the same.
-- **Performance and ranking.** BRL has a slightly higher mean accuracy (0.8276 vs 0.8246), but the bigger difference is in ranking: BRL's mean AUC is 0.8578 against Sequential Covering's 0.7279. AUC judges ordering across thresholds, and BRL's several posterior leaf probabilities give it a finer ordering than Sequential Covering's few rule-confidence values plus a default.
-- **Precision-recall trade-off.** At threshold 0.5 both models are close: Sequential Covering has a slightly higher F1 (0.5953 vs 0.5891) and recall (0.5193 vs 0.5022), while BRL has higher precision (0.7291 vs 0.7006). When the threshold is tuned on validation data, BRL's F1 rises to 0.6310 while Sequential Covering's falls to 0.5726. Tuning helps BRL but not Sequential Covering, probably because BRL's probability scale transfers better from validation to test than Sequential Covering's coarse, few-valued scores.
+- **Performance and ranking.** The models have nearly identical mean accuracy (0.8244 for BRL vs 0.8246 for Sequential Covering), but the bigger difference is in ranking: BRL's mean AUC is 0.8579 against Sequential Covering's 0.7279. AUC judges ordering across thresholds, and BRL's several posterior leaf probabilities give it a finer ordering than Sequential Covering's few rule-confidence values plus a default.
+- **Precision-recall trade-off.** At threshold 0.5, BRL has higher F1 (0.6332 vs 0.5953) and recall (0.6121 vs 0.5193), while Sequential Covering has higher precision (0.7006 vs 0.6687). Validation threshold selection leaves BRL's mean F1 essentially unchanged (0.6313) and lowers Sequential Covering's (0.5726). The result shows that threshold tuning should be assessed on held-out test data rather than assumed to improve F1.
 - **Explanation size.** Sequential Covering averages 3.7 rules and 7.3 literals; BRL averages 8.0 rules and 14.0 literals, the trade-off shown in the Pareto plot in the results directory. BRL is richer probabilistically, while Sequential Covering is quicker to read. Neither wins on every measure.
-- **Stability.** BRL learns 8 rules on every seed with a small accuracy std (±0.0009) and a larger fixed-threshold recall std (±0.0885). Sequential Covering learns 4, 3, and 4 rules across seeds 42, 43, and 44, and its validation-selected threshold `tau` varies from 0.141 to 0.634 as the train/validation split and internal grow/prune split change. The per-seed numbers are saved in the results directory.
+- **Stability.** BRL learns 8 rules on every seed with a larger accuracy std (±0.0129) and a fixed-threshold recall std of ±0.0853. Sequential Covering learns 4, 3, and 4 rules across seeds 42, 43, and 44, and its validation-selected threshold `tau` varies from 0.141 to 0.634 as the train/validation split and internal grow/prune split change. The per-seed numbers are saved in the results directory.
 
 `random_state` is fixed for the splits, the PyTorch shuffling generator, and the MH chain, so a given seed reproduces its row.
 
@@ -307,7 +306,7 @@ Mean ± std over the three seeds:
 
 **Separating a real difference from run-to-run noise.** A single seed can make either model look better by chance. We repeated the whole split over three seeds and reported mean ± std, which showed that BRL's accuracy is very stable (±0.0009) while its recall is not (±0.0885), and that Sequential Covering's rule count actually varies (4, 3, 4) across seeds.
 
-**Explaining a counter-intuitive result.** Tuning the threshold helped BRL but made Sequential Covering worse. Rather than hide this, we traced it to the probability scales: Sequential Covering emits only a few distinct confidence values, so a threshold chosen on validation can land between two of those values and behave differently on test, while BRL's finer posterior probabilities transfer more reliably.
+**Explaining a counter-intuitive result.** Tuning the threshold did not improve the mean test F1 for either model. Rather than hide this, we report it as expected sampling variation: a threshold is selected on validation data, while the test score is measured on different held-out data. Sequential Covering is especially sensitive because it emits only a few distinct confidence values.
 
 ---
 
@@ -327,7 +326,7 @@ The Bayesian Rule List diagram shows the ordered first-match semantics and the p
 
 ### ROC comparison
 
-The ROC plot compares both rule models with the interpretable Naive Bayes baseline. In this figure, Naive Bayes is trained on the same discretised features as the rule models; the Stage 1 baseline instead uses the raw columns. The single-split AUC difference in the plot is: BRL 0.8633, Sequential Covering 0.7354, and Naive Bayes 0.9128.
+The ROC plot compares both rule models with the interpretable Naive Bayes baseline. In this figure, Naive Bayes is trained on the same discretised features as the rule models; the Stage 1 baseline instead uses the raw columns. The single-split AUC values in the plot are: BRL 0.8648, Sequential Covering 0.7354, and Naive Bayes 0.8994.
 
 <img src="results/figures/roc_curves.png" alt="ROC curves" width="380">
 
@@ -352,7 +351,7 @@ We implemented both assigned topics, **Sequential Covering** (separate-and-conqu
 | Model | rules | literals | Accuracy | Precision | Recall | F1 (0.5) | F1 (tuned) | AUC |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | Sequential Covering | 3.7 | 7.3 | 0.8246 | 0.7006 | 0.5193 | 0.5953 | 0.5726 | 0.7279 |
-| Bayesian Rule List | 8.0 | 14.0 | 0.8276 | 0.7291 | 0.5022 | 0.5891 | 0.6310 | 0.8578 |
+| Bayesian Rule List | 8.0 | 14.0 | 0.8244 | 0.6687 | 0.6121 | 0.6332 | 0.6313 | 0.8579 |
 
 Both beat the majority-class baseline (0.7511 accuracy) while staying readable. Sequential Covering gives the smallest explanation; BRL gives better ranking and probability information at the cost of roughly twice the rules and literals.
 
