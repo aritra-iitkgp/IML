@@ -147,7 +147,7 @@ class BayesianRuleList:
                 # backward: from prop, we can replace the same position back to old
                 prop_set = set(prop)
                 n_bwd_pos = len(prop)
-                n_bwd_cand = max(len(set(range(n_c)) - prop_set) + 1, 1)
+                n_bwd_cand = max(len(set(range(n_c)) - prop_set), 1)
                 q_backward = 1.0 / (n_bwd_pos * n_bwd_cand)
             else:
                 continue
