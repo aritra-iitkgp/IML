@@ -39,7 +39,7 @@ Finding 2: the classes are imbalanced, **75.1% `<=50K`** against **24.9% `>50K`*
 Before implementing the rule learners we wanted a floor to compare against, so we added two cheap references:
 
 1. a **majority-class** predictor (always predict `<=50K`), and
-2. a **Gaussian/Categorical Naive Bayes** baseline via scikit-learn.
+2. a **Categorical Naive Bayes** baseline via scikit-learn on the raw columns (a separate Naive Bayes model on the discretised features is used only in the ROC figure for a like-for-like comparison with the rule models).
 
 | Quantity | Value |
 |---|---|

@@ -106,22 +106,26 @@ class BayesianRuleList:
                 if c is None:
                     continue
                 # number of possible forward add moves: candidates not in cur
-                n_fwd = max(len(set(range(n_c)) - cur_set), 1)
-                # number of positions to insert
+                n_fwd_cand = max(len(set(range(n_c)) - cur_set), 1)
+                # number of positions to insert: len(cur)+1
+                n_fwd_pos = len(cur) + 1
                 pos = rng.randint(0, len(prop))
                 prop.insert(pos, c)
-                q_forward = 1.0 / n_fwd
-                # backward (remove) moves from prop: any position can be removed
-                q_backward = 1.0 / len(prop)
+                q_forward = 1.0 / (n_fwd_cand * n_fwd_pos)
+                # backward (remove) moves from prop: choose a position among len(prop)
+                n_bwd_pos = len(prop)
+                q_backward = 1.0 / n_bwd_pos
             elif move == 1 and len(prop) > 1:                   # remove
-                # forward: choose a position to remove
+                # forward: choose a position to remove among len(cur)
+                n_fwd_pos = len(cur)
                 idx = rng.randrange(len(prop))
                 removed = prop.pop(idx)
-                q_forward = 1.0 / len(cur)
-                # backward (add) from prop: can add any candidate not in prop
+                q_forward = 1.0 / n_fwd_pos
+                # backward (add) from prop: can add any candidate not in prop, at any position
                 prop_set = set(prop)
-                n_bwd = max(len(set(range(n_c)) - prop_set), 1)
-                q_backward = 1.0 / n_bwd
+                n_bwd_cand = max(len(set(range(n_c)) - prop_set), 1)
+                n_bwd_pos = len(prop) + 1
+                q_backward = 1.0 / (n_bwd_cand * n_bwd_pos)
             elif move == 2 and len(prop) > 1:                   # swap order
                 i, j = rng.sample(range(len(prop)), 2)
                 prop[i], prop[j] = prop[j], prop[i]
